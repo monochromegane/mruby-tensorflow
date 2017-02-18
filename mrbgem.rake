@@ -39,7 +39,9 @@ MRuby::Gem::Specification.new('mruby-tensorflow') do |spec|
 
   spec.cxx.flags << "-std=c++11"
 
-  if `uname` !~ /Darwin/
+  if `uname` =~ /Darwin/
+    spec.linker.flags << "-all_load"
+  else
     spec.linker.flags << "-Wl,--allow-multiple-definition"
     spec.linker.flags << "-Wl,--whole-archive"
   end
