@@ -1,27 +1,71 @@
 # mruby-tensorflow   [![Build Status](https://travis-ci.org/monochromegane/mruby-tensorflow.svg?branch=master)](https://travis-ci.org/monochromegane/mruby-tensorflow)
-TensorFlow class
+
+TensorFlow class for mruby.
+
+[TensorFlow](https://www.tensorflow.org/) is a library for Machine Intelligence. This mrbgem provides mruby bindings for the library.
+
+## example
+
+```ruby
+a, x, b = 1.0, 2.0, 3.0
+a_tensor = TensorFlow::Tensor.new([a], [1])
+x_tensor = TensorFlow::Tensor.new([x], [1])
+b_tensor = TensorFlow::Tensor.new([b], [1])
+
+# Load linear fucntion graph that provides 'y = ax + b'.
+graph = TensorFlow::GraphDef.new
+graph.load('test/linear_function_graph.pb')
+session = TensorFlow::Session.new
+session.create(graph)
+
+tensors = session.run([['a:0', a_tensor], ['x:0', x_tensor], ['b:0', b_tensor]], ['y:0'])
+p tensors[0].flat[0]
+#=> 5.0
+```
+
 ## install by mrbgems
 - add conf.gem line to `build_config.rb`
 
 ```ruby
 MRuby::Build.new do |conf|
 
-    # ... (snip) ...
+  # Avoid build failures when C and C++ mrbgems exist.
+  conf.disable_cxx_exception
+  conf.linker do |linker|
+      linker.libraries = %w(stdc++ m pthread dl z)
+  end
 
-    conf.gem :github => 'monochromegane/mruby-tensorflow'
+  require 'open3'
+
+  def run_command env, command
+    STDOUT.sync = true
+    puts "build: [exec] #{command}"
+    Open3.popen2e(env, command) do |stdin, stdout, thread|
+      print stdout.read
+      fail "#{command} failed" if thread.value != 0
+    end
+  end
+
+  # Avoid confict libmruby_core and libmruby when linker use -all_load option.
+  e = {}
+  run_command e, "ruby -i -pe '$_.gsub!(\"file exec => [driver_obj, mlib, mrbtest_lib, libmruby_core, libmruby]\", \"file exec => [driver_obj, mlib, mrbtest_lib, libmruby]\")' mrbgems/mruby-test/mrbgem.rake"
+
+  # ... (snip) ...
+
+  conf.gem :github => 'monochromegane/mruby-tensorflow'
 end
 ```
-## example
-```ruby
-p TensorFlow.hi
-#=> "hi!!"
-t = TensorFlow.new "hello"
-p t.hello
-#=> "hello"
-p t.bye
-#=> "hello bye"
-```
+
+#### NOTE
+
+- `conf.disable_cxx_exception` must be written above `conf.gem` section.
+- This mrbgem build a TensorFlow static library (libtensorflow-core.a). So, the process needs a lot of memory.
+- If you install `protobuf` by OSX homebrew, you must uninstall the package.
 
 ## License
-under the MIT License:
-- see LICENSE file
+
+[MIT](https://github.com/monochromegane/mruby-tensorflow/blob/master/LICENSE)
+
+## Author
+
+[monochromegane](https://github.com/monochromegane)
