@@ -54,4 +54,6 @@ MRuby::Gem::Specification.new('mruby-tensorflow') do |spec|
   spec.linker.flags_before_libraries << "#{tensorflow_make_dir}/gen/lib/libtensorflow-core.a"
   spec.linker.flags_before_libraries << "#{tensorflow_make_dir}/gen/protobuf/lib/libprotobuf.a"
   spec.linker.flags_before_libraries << "#{tensorflow_make_dir}/gen/protobuf/lib/libprotoc.a"
+
+  spec.add_dependency "mruby-io", :github => 'iij/mruby-io'
 end
