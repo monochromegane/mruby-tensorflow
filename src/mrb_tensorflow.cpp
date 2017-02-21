@@ -124,8 +124,6 @@ static mrb_value mrb_tensorflow_tensor_flat(mrb_state *mrb, mrb_value self)
 // TensorFlow::Session
 static void tensorflow_session_free(mrb_state *mrb, void *ptr)
 {
-  tensorflow::Session* session = static_cast<tensorflow::Session*>(ptr);
-  delete session;
 }
 
 static struct mrb_data_type tensorflow_session_type = { "Session", tensorflow_session_free };
@@ -164,6 +162,7 @@ static mrb_value mrb_tensorflow_session_close(mrb_state *mrb, mrb_value self)
   if (!status.ok()) {
     mrb_raise(mrb, mrb_class_get(mrb, "SessionError"), status.error_message().c_str());
   }
+  delete session;
   return self;
 }
 
