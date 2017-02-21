@@ -157,6 +157,16 @@ static mrb_value mrb_tensorflow_session_create(mrb_state *mrb, mrb_value self)
   return self;
 }
 
+static mrb_value mrb_tensorflow_session_close(mrb_state *mrb, mrb_value self)
+{
+  tensorflow::Session* session = static_cast<tensorflow::Session*>(mrb_get_datatype(mrb, self, &tensorflow_session_type));
+  tensorflow::Status status = session->Close();
+  if (!status.ok()) {
+    mrb_raise(mrb, mrb_class_get(mrb, "SessionError"), status.error_message().c_str());
+  }
+  return self;
+}
+
 typedef std::pair<string, tensorflow::Tensor> input_pair;
 
 static mrb_value mrb_tensorflow_session_run(mrb_state *mrb, mrb_value self)
@@ -219,6 +229,7 @@ void mrb_mruby_tensorflow_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, session, "initialize", mrb_tensorflow_session_init,   MRB_ARGS_NONE());
   mrb_define_method(mrb, session, "create",     mrb_tensorflow_session_create, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, session, "run",        mrb_tensorflow_session_run,    MRB_ARGS_REQ(2));
+  mrb_define_method(mrb, session, "close",      mrb_tensorflow_session_close,  MRB_ARGS_NONE());
   DONE;
 }
 
