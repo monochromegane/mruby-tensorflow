@@ -19,8 +19,54 @@ session = TensorFlow::Session.new
 session.create(graph)
 
 tensors = session.run([['a:0', a_tensor], ['x:0', x_tensor], ['b:0', b_tensor]], ['y:0'])
+session.close
+
 p tensors[0].flat[0]
 #=> 5.0
+```
+
+### ngx_mruby
+
+```rb
+# mruby_init
+userdata = Userdata.new "tensorflow_data_key"
+graph = TensorFlow::GraphDef.new
+graph.load('test/linear_function_graph.pb')
+userdata.graph = graph
+```
+
+```rb
+# mruby_content_handler
+class Linear
+  def call(env)
+    userdata = Userdata.new "tensorflow_data_key"
+    graph = userdata.graph
+    return not_found unless graph
+
+    session = TensorFlow::Session.new
+    session.create(graph)
+
+    params = env['QUERY_STRING'].split('&').map {|kv| kv.split('=') }.to_h
+
+    a_tensor = TensorFlow::Tensor.new([params['a']], [1])
+    x_tensor = TensorFlow::Tensor.new([params['x']], [1])
+    b_tensor = TensorFlow::Tensor.new([params['b']], [1])
+
+    tensors = session.run([['a:0', a_tensor], ['x:0', x_tensor], ['b:0', b_tensor]], ['y:0'])
+
+    [200, { "Content-Type" => "application/json;charset=utf-8" }, [tensors[0].flat]]
+  ensure
+    session.close if session
+  end
+
+  private
+
+  def not_found
+    return [404, { "Content-Type" => "application/json;charset=utf-8" }, [{"error" => "not_found"}.to_json]]
+  end
+end
+
+run Linear.new
 ```
 
 ## install by mrbgems
